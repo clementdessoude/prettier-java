@@ -152,7 +152,8 @@ public final class ArrayTable<R, C, V>
     rowKeyToIndex = Maps.indexMap(rowList);
     columnKeyToIndex = Maps.indexMap(columnList);
 
-    @SuppressWarnings("unchecked"
+    @SuppressWarnings(
+      "unchecked"
     ) V[][] tmpArray = (V[][]) new Object[rowList.size()][columnList.size()];
     array = tmpArray;
 

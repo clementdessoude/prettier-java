@@ -229,13 +229,13 @@ class InterfacesPrettierVisitor {
 
     const annoArgs = [];
     if (ctx.LBrace) {
-      annoArgs.push(ctx.LBrace[0]);
+      annoArgs.push(ctx.LBrace[0], softline);
       if (ctx.elementValuePairList) {
         annoArgs.push(this.visit(ctx.elementValuePairList));
       } else if (ctx.elementValue) {
         annoArgs.push(this.visit(ctx.elementValue));
       }
-      annoArgs.push(dedent(concat([softline, ctx.RBrace[0]])));
+      annoArgs.push(dedent(softline), ctx.RBrace[0]);
     }
 
     return group(
@@ -247,9 +247,7 @@ class InterfacesPrettierVisitor {
     const elementValuePairs = this.mapVisit(ctx.elementValuePair);
     const commas = ctx.Comma ? ctx.Comma.map(elt => concat([elt, line])) : [];
 
-    return group(
-      rejectAndConcat([softline, rejectAndJoinSeps(commas, elementValuePairs)])
-    );
+    return rejectAndConcat([rejectAndJoinSeps(commas, elementValuePairs)]);
   }
 
   elementValuePair(ctx) {
