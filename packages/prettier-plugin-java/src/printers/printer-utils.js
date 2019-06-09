@@ -1,7 +1,7 @@
 "use strict";
 const _ = require("lodash");
 const { join, concat, getImageWithComments } = require("./prettier-builder");
-const { hardline } = require("prettier").doc.builders;
+const { indent, hardline } = require("prettier").doc.builders;
 
 function buildFqn(tokens, dots) {
   return rejectAndJoinSeps(dots ? dots : [], tokens);
@@ -265,6 +265,19 @@ function handleClassBodyDeclaration(
   return rejectAndJoinSeps(separators, classBodyDeclsVisited);
 }
 
+function putIntoBraces(argument, separator, LBrace, RBrace) {
+  if (argument === undefined || argument === "") {
+    return concat([LBrace, RBrace]);
+  }
+
+  return rejectAndConcat([
+    LBrace,
+    indent(concat([separator, argument])),
+    separator,
+    RBrace
+  ]);
+}
+
 module.exports = {
   buildFqn,
   reject,
@@ -284,5 +297,6 @@ module.exports = {
   hasComments,
   displaySemicolon,
   rejectSeparators,
-  handleClassBodyDeclaration
+  handleClassBodyDeclaration,
+  putIntoBraces
 };
