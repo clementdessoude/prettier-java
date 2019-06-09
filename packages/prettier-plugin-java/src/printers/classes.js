@@ -54,23 +54,21 @@ class ClassesPrettierVisitor {
 
     let superClassesPart = "";
     if (optionalSuperClasses) {
-      superClassesPart = indent(
-        rejectAndConcat([softline, optionalSuperClasses])
-      );
+      superClassesPart = indent(rejectAndConcat([line, optionalSuperClasses]));
     }
 
     let superInterfacesPart = "";
     if (optionalSuperInterfaces) {
       superInterfacesPart = indent(
-        rejectAndConcat([softline, optionalSuperInterfaces])
+        rejectAndConcat([line, optionalSuperInterfaces])
       );
     }
 
     return rejectAndJoin(" ", [
       group(
-        rejectAndJoin(" ", [
-          ctx.Class[0],
-          rejectAndConcat([name, optionalTypeParams]),
+        rejectAndConcat([
+          rejectAndJoin(" ", [ctx.Class[0], name]),
+          optionalTypeParams,
           superClassesPart,
           superInterfacesPart
         ])
@@ -109,20 +107,19 @@ class ClassesPrettierVisitor {
   superinterfaces(ctx) {
     const interfaceTypeList = this.visit(ctx.interfaceTypeList);
 
-    return indent(rejectAndJoin(" ", [ctx.Implements[0], interfaceTypeList]));
+    return group(
+      rejectAndConcat([
+        ctx.Implements[0],
+        indent(rejectAndConcat([line, interfaceTypeList]))
+      ])
+    );
   }
 
   interfaceTypeList(ctx) {
     const interfaceType = this.mapVisit(ctx.interfaceType);
     const commas = ctx.Comma ? ctx.Comma.map(elt => concat([elt, line])) : [];
 
-    return group(
-      rejectAndConcat([
-        softline,
-        rejectAndJoinSeps(commas, interfaceType),
-        breakParent
-      ])
-    );
+    return group(rejectAndConcat([rejectAndJoinSeps(commas, interfaceType)]));
   }
 
   classBody(ctx) {
