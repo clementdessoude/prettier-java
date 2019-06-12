@@ -1,6 +1,11 @@
 "use strict";
 const _ = require("lodash");
-const { join, concat, getImageWithComments } = require("./prettier-builder");
+const {
+  join,
+  concat,
+  group,
+  getImageWithComments
+} = require("./prettier-builder");
 const { indent, hardline } = require("prettier").doc.builders;
 
 function buildFqn(tokens, dots) {
@@ -270,12 +275,14 @@ function putIntoBraces(argument, separator, LBrace, RBrace) {
     return concat([LBrace, RBrace]);
   }
 
-  return rejectAndConcat([
-    LBrace,
-    indent(concat([separator, argument])),
-    separator,
-    RBrace
-  ]);
+  return group(
+    rejectAndConcat([
+      LBrace,
+      indent(concat([separator, argument])),
+      separator,
+      RBrace
+    ])
+  );
 }
 
 module.exports = {
