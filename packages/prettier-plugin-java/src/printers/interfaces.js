@@ -50,11 +50,10 @@ class InterfacesPrettierVisitor {
 
     return rejectAndJoin(" ", [
       group(
-        rejectAndJoin(" ", [
-          ctx.Interface[0],
-          typeIdentifier,
-          typeParameters,
-          extendsInterfacesPart
+        concat([
+          rejectAndJoin(" ", [ctx.Interface[0], typeIdentifier]),
+          typeParameters === "" ? " " : "",
+          rejectAndJoin(" ", [typeParameters, extendsInterfacesPart])
         ])
       ),
       interfaceBody
