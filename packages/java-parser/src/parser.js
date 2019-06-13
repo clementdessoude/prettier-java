@@ -131,7 +131,7 @@ class JavaParser extends Parser {
           OR: true
         }
       },
-      nodePositionTracking: "full"
+      nodeLocationTracking: "full"
     });
 
     const $ = this;
