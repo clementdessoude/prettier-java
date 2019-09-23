@@ -381,7 +381,7 @@ function defineRules($, t) {
     $.OR([
       // Spec Deviation: extracted to "variableParaRegularParameter"
       {
-        GATE: $.BACKTRACK($.variableParaRegularParameter),
+        GATE: $.ACTION(() => $.BACKTRACK($.variableParaRegularParameter)),
         ALT: () => $.SUBRULE($.variableParaRegularParameter)
       },
       { ALT: () => $.SUBRULE($.variableArityParameter) }
@@ -491,7 +491,7 @@ function defineRules($, t) {
     $.OPTION2({
       // a "formalParameterList" and a "receiverParameter"
       // cannot be distinguished using fixed lookahead.
-      GATE: $.BACKTRACK($.receiverParameter),
+      GATE: $.ACTION(() => $.BACKTRACK($.receiverParameter)),
       DEF: () => {
         $.SUBRULE($.receiverParameter);
         $.CONSUME(t.Comma);
@@ -513,7 +513,7 @@ function defineRules($, t) {
   $.RULE("constructorBody", () => {
     $.CONSUME(t.LCurly);
     $.OPTION({
-      GATE: $.BACKTRACK($.explicitConstructorInvocation),
+      GATE: $.ACTION(() => $.BACKTRACK($.explicitConstructorInvocation)),
       DEF: () => {
         $.SUBRULE($.explicitConstructorInvocation);
       }

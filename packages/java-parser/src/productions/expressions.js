@@ -76,7 +76,7 @@ function defineRules($, t) {
     //       be gained by refactoring out the backtracking.
     $.OR([
       {
-        GATE: $.BACKTRACK($.regularLambdaParameter),
+        GATE: $.ACTION(() => $.BACKTRACK($.regularLambdaParameter)),
         ALT: () => $.SUBRULE($.regularLambdaParameter)
       },
       { ALT: () => $.SUBRULE($.variableArityParameter) }
@@ -456,7 +456,7 @@ function defineRules($, t) {
     $.CONSUME(t.New);
     $.OR([
       {
-        GATE: $.BACKTRACK($.primitiveType),
+        GATE: $.ACTION(() => $.BACKTRACK($.primitiveType)),
         ALT: () => $.SUBRULE($.primitiveType)
       },
       { ALT: () => $.SUBRULE($.classOrInterfaceType) }
@@ -464,7 +464,7 @@ function defineRules($, t) {
 
     $.OR2([
       {
-        GATE: $.BACKTRACK($.arrayCreationDefaultInitSuffix),
+        GATE: $.ACTION(() => $.BACKTRACK($.arrayCreationDefaultInitSuffix)),
         ALT: () => $.SUBRULE($.arrayCreationDefaultInitSuffix)
       },
       { ALT: () => $.SUBRULE($.arrayCreationExplicitInitSuffix) }

@@ -22,7 +22,7 @@ function defineRules($, t) {
   // https://docs.oracle.com/javase/specs/jls/se11/html/jls-7.html#jls-OrdinaryCompilationUnit
   $.RULE("ordinaryCompilationUnit", () => {
     $.OPTION({
-      GATE: $.BACKTRACK($.packageDeclaration),
+      GATE: $.ACTION(() => $.BACKTRACK($.packageDeclaration)),
       DEF: () => {
         $.SUBRULE($.packageDeclaration);
       }

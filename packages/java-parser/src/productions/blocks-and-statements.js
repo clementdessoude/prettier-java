@@ -437,7 +437,7 @@ function defineRules($, t) {
   $.RULE("resource", () => {
     $.OR([
       {
-        GATE: $.BACKTRACK($.resourceInit),
+        GATE: $.ACTION(() => $.BACKTRACK($.resourceInit)),
         // Spec Deviation: extracted this alternative to "resourceInit"
         //                 to enable backtracking.
         ALT: () => $.SUBRULE($.resourceInit)

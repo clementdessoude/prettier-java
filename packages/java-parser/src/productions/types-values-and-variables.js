@@ -196,7 +196,7 @@ function defineRules($, t) {
     // TODO: performance: evaluate flipping the order of alternatives
     $.OR([
       {
-        GATE: $.BACKTRACK($.referenceType),
+        GATE: $.ACTION(() => $.BACKTRACK($.referenceType)),
         ALT: () => $.SUBRULE($.referenceType)
       },
       { ALT: () => $.SUBRULE($.wildcard) }
