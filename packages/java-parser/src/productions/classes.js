@@ -112,7 +112,7 @@ function defineRules($, t) {
       $.identifyClassBodyDeclarationType
     );
 
-    $.OR([
+    $.OR1([
       {
         GATE: () =>
           nextRuleType >= classBodyTypes.fieldDeclaration &&
@@ -653,164 +653,168 @@ function defineRules($, t) {
   });
 
   $.RULE("isClassDeclaration", () => {
-    if (
-      $.OPTION(() => {
-        $.CONSUME(t.Semicolon);
-      })
-    ) {
-      // an empty "TypeDeclaration"
-      return false;
-    }
-
-    try {
-      // The {classModifier} is a super grammar of the "interfaceModifier"
-      // So we must parse all the "{classModifier}" before we can distinguish
-      // between the alternatives.
-      $.MANY({
-        GATE: () =>
-          (tokenMatcher($.LA(1).tokenType, t.At) &&
-            tokenMatcher($.LA(2).tokenType, t.Interface)) === false,
-        DEF: () => {
-          $.SUBRULE($.classModifier);
-        }
-      });
-    } catch (e) {
-      if (isRecognitionException(e)) {
-        // TODO: add original syntax error?
-        throw "Cannot Identify if the <TypeDeclaration> is a <ClassDeclaration> or an <InterfaceDeclaration>";
-      } else {
-        throw e;
+    return $.ACTION(() => {
+      if (
+        $.OPTION(() => {
+          $.CONSUME(t.Semicolon);
+        })
+      ) {
+        // an empty "TypeDeclaration"
+        return false;
       }
-    }
 
-    const nextTokenType = this.LA(1).tokenType;
-    return (
-      tokenMatcher(nextTokenType, t.Class) ||
-      tokenMatcher(nextTokenType, t.Enum)
-    );
+      try {
+        // The {classModifier} is a super grammar of the "interfaceModifier"
+        // So we must parse all the "{classModifier}" before we can distinguish
+        // between the alternatives.
+        $.MANY({
+          GATE: () =>
+            (tokenMatcher($.LA(1).tokenType, t.At) &&
+              tokenMatcher($.LA(2).tokenType, t.Interface)) === false,
+          DEF: () => {
+            $.SUBRULE($.classModifier);
+          }
+        });
+      } catch (e) {
+        if (isRecognitionException(e)) {
+          // TODO: add original syntax error?
+          throw "Cannot Identify if the <TypeDeclaration> is a <ClassDeclaration> or an <InterfaceDeclaration>";
+        } else {
+          throw e;
+        }
+      }
+
+      const nextTokenType = this.LA(1).tokenType;
+      return (
+        tokenMatcher(nextTokenType, t.Class) ||
+        tokenMatcher(nextTokenType, t.Enum)
+      );
+    });
   });
 
   $.RULE("identifyClassBodyDeclarationType", () => {
-    try {
-      let nextTokenType = this.LA(1).tokenType;
-      let nextNextTokenType = this.LA(2).tokenType;
+    return $.ACTION(() => {
+      try {
+        let nextTokenType = this.LA(1).tokenType;
+        let nextNextTokenType = this.LA(2).tokenType;
 
-      switch (nextTokenType) {
-        case t.Semicolon:
-          return classBodyTypes.semiColon;
-        case t.LCurly:
-          return classBodyTypes.instanceInitializer;
-        case t.Static:
-          switch (nextNextTokenType) {
-            case t.LCurly:
-              return classBodyTypes.staticInitializer;
-          }
-      }
-
-      // We have to look beyond the modifiers to distinguish between the declaration types.
-      $.MANY({
-        GATE: () =>
-          (tokenMatcher($.LA(1).tokenType, t.At) &&
-            tokenMatcher($.LA(2).tokenType, t.Interface)) === false,
-        DEF: () => {
-          // This alternation includes all possible modifiers for all types of "ClassBodyDeclaration"
-          // Certain combinations are syntactically invalid, this is **not** checked here,
-          // Invalid combinations will cause a descriptive parsing error message to be
-          // Created inside the relevant parsing rules **after** this lookahead
-          // analysis.
-          $.OR([
-            {
-              GATE: () =>
-                (tokenMatcher($.LA(1).tokenType, t.At) &&
-                  tokenMatcher($.LA(2).tokenType, t.Interface)) === false,
-              ALT: () => $.SUBRULE($.annotation)
-            },
-            { ALT: () => $.CONSUME(t.Public) },
-            { ALT: () => $.CONSUME(t.Protected) },
-            { ALT: () => $.CONSUME(t.Private) },
-            { ALT: () => $.CONSUME(t.Abstract) },
-            { ALT: () => $.CONSUME(t.Static) },
-            { ALT: () => $.CONSUME(t.Final) },
-            { ALT: () => $.CONSUME(t.Transient) },
-            { ALT: () => $.CONSUME(t.Volatile) },
-            { ALT: () => $.CONSUME(t.Synchronized) },
-            { ALT: () => $.CONSUME(t.Native) },
-            { ALT: () => $.CONSUME(t.Strictfp) }
-          ]);
+        switch (nextTokenType) {
+          case t.Semicolon:
+            return classBodyTypes.semiColon;
+          case t.LCurly:
+            return classBodyTypes.instanceInitializer;
+          case t.Static:
+            switch (nextNextTokenType) {
+              case t.LCurly:
+                return classBodyTypes.staticInitializer;
+            }
         }
-      });
 
-      nextTokenType = this.LA(1).tokenType;
-      nextNextTokenType = this.LA(2).tokenType;
-      if (
-        tokenMatcher(nextTokenType, t.Identifier) &&
-        tokenMatcher(nextNextTokenType, t.LBrace)
-      ) {
-        return classBodyTypes.constructorDeclaration;
-      }
+        // We have to look beyond the modifiers to distinguish between the declaration types.
+        $.MANY({
+          GATE: () =>
+            (tokenMatcher($.LA(1).tokenType, t.At) &&
+              tokenMatcher($.LA(2).tokenType, t.Interface)) === false,
+          DEF: () => {
+            // This alternation includes all possible modifiers for all types of "ClassBodyDeclaration"
+            // Certain combinations are syntactically invalid, this is **not** checked here,
+            // Invalid combinations will cause a descriptive parsing error message to be
+            // Created inside the relevant parsing rules **after** this lookahead
+            // analysis.
+            $.OR([
+              {
+                GATE: () =>
+                  (tokenMatcher($.LA(1).tokenType, t.At) &&
+                    tokenMatcher($.LA(2).tokenType, t.Interface)) === false,
+                ALT: () => $.SUBRULE($.annotation)
+              },
+              { ALT: () => $.CONSUME(t.Public) },
+              { ALT: () => $.CONSUME(t.Protected) },
+              { ALT: () => $.CONSUME(t.Private) },
+              { ALT: () => $.CONSUME(t.Abstract) },
+              { ALT: () => $.CONSUME(t.Static) },
+              { ALT: () => $.CONSUME(t.Final) },
+              { ALT: () => $.CONSUME(t.Transient) },
+              { ALT: () => $.CONSUME(t.Volatile) },
+              { ALT: () => $.CONSUME(t.Synchronized) },
+              { ALT: () => $.CONSUME(t.Native) },
+              { ALT: () => $.CONSUME(t.Strictfp) }
+            ]);
+          }
+        });
 
-      if (
-        tokenMatcher(nextTokenType, t.Class) ||
-        tokenMatcher(nextTokenType, t.Enum)
-      ) {
-        return classBodyTypes.classDeclaration;
-      }
-
-      if (
-        tokenMatcher(nextTokenType, t.Interface) ||
-        tokenMatcher(nextTokenType, t.At)
-      ) {
-        return classBodyTypes.interfaceDeclaration;
-      }
-
-      if (tokenMatcher(nextTokenType, t.Void)) {
-        // method with result type "void"
-        return classBodyTypes.methodDeclaration;
-      }
-
-      // Type Arguments common prefix
-      if (tokenMatcher(nextTokenType, t.Less)) {
-        this.SUBRULE($.typeParameters);
-        const nextTokenType = this.LA(1).tokenType;
-        const nextNextTokenType = this.LA(2).tokenType;
-        // "<T> foo(" -> constructor
+        nextTokenType = this.LA(1).tokenType;
+        nextNextTokenType = this.LA(2).tokenType;
         if (
           tokenMatcher(nextTokenType, t.Identifier) &&
           tokenMatcher(nextNextTokenType, t.LBrace)
         ) {
           return classBodyTypes.constructorDeclaration;
         }
-        // typeParameters can only appear in method or constructor
-        // declarations, so if it is not a constructor it must be a method
-        return classBodyTypes.methodDeclaration;
+
+        if (
+          tokenMatcher(nextTokenType, t.Class) ||
+          tokenMatcher(nextTokenType, t.Enum)
+        ) {
+          return classBodyTypes.classDeclaration;
+        }
+
+        if (
+          tokenMatcher(nextTokenType, t.Interface) ||
+          tokenMatcher(nextTokenType, t.At)
+        ) {
+          return classBodyTypes.interfaceDeclaration;
+        }
+
+        if (tokenMatcher(nextTokenType, t.Void)) {
+          // method with result type "void"
+          return classBodyTypes.methodDeclaration;
+        }
+
+        // Type Arguments common prefix
+        if (tokenMatcher(nextTokenType, t.Less)) {
+          this.SUBRULE($.typeParameters);
+          const nextTokenType = this.LA(1).tokenType;
+          const nextNextTokenType = this.LA(2).tokenType;
+          // "<T> foo(" -> constructor
+          if (
+            tokenMatcher(nextTokenType, t.Identifier) &&
+            tokenMatcher(nextNextTokenType, t.LBrace)
+          ) {
+            return classBodyTypes.constructorDeclaration;
+          }
+          // typeParameters can only appear in method or constructor
+          // declarations, so if it is not a constructor it must be a method
+          return classBodyTypes.methodDeclaration;
+        }
+
+        // Only field or method declarations may be valid at this point.
+        // All other alternatives should have been attempted.
+        // **both** start with "unannType"
+        this.SUBRULE($.unannType);
+
+        const nextToken = this.LA(1);
+        nextNextTokenType = this.LA(2).tokenType;
+        // "foo(..." --> look like method start
+        if (
+          tokenMatcher(nextToken, t.Identifier) &&
+          tokenMatcher(nextNextTokenType, t.LBrace)
+        ) {
+          return classBodyTypes.methodDeclaration;
+        }
+
+        // a valid field
+        // TODO: because we use token categories we should use tokenMatcher everywhere.
+        if (tokenMatcher(nextToken, t.Identifier)) {
+          return classBodyTypes.fieldDeclaration;
+        }
+
+        return classBodyTypes.unknown;
+      } catch (e) {
+        // TODO: add info from the original error
+        throw Error("Cannot Identify the type of a <classBodyDeclaration>");
       }
-
-      // Only field or method declarations may be valid at this point.
-      // All other alternatives should have been attempted.
-      // **both** start with "unannType"
-      this.SUBRULE($.unannType);
-
-      const nextToken = this.LA(1);
-      nextNextTokenType = this.LA(2).tokenType;
-      // "foo(..." --> look like method start
-      if (
-        tokenMatcher(nextToken, t.Identifier) &&
-        tokenMatcher(nextNextTokenType, t.LBrace)
-      ) {
-        return classBodyTypes.methodDeclaration;
-      }
-
-      // a valid field
-      // TODO: because we use token categories we should use tokenMatcher everywhere.
-      if (tokenMatcher(nextToken, t.Identifier)) {
-        return classBodyTypes.fieldDeclaration;
-      }
-
-      return classBodyTypes.unknown;
-    } catch (e) {
-      // TODO: add info from the original error
-      throw Error("Cannot Identify the type of a <classBodyDeclaration>");
-    }
+    });
   });
 }
 

@@ -104,7 +104,7 @@ function defineRules($, t) {
         ALT: () => $.SUBRULE($.classDeclaration)
       },
       { ALT: () => $.SUBRULE($.interfaceDeclaration) },
-      { ALT: () => $.CONSUME(t.Semicolon) }
+      { ALT: () => $.CONSUME1(t.Semicolon) }
     ]);
   });
 
@@ -211,43 +211,45 @@ function defineRules($, t) {
   });
 
   $.RULE("isModuleCompilationUnit", () => {
-    $.OPTION(() => {
-      $.SUBRULE($.packageDeclaration);
-      // TODO: this return must be outside the OPTION at the top level rule
-      // a Java Module source code may not contain a package declaration.
-      return false;
-    });
-
-    try {
-      // the "{importDeclaration}" is a common prefix
-      $.MANY(() => {
-        $.SUBRULE2($.importDeclaration);
+    return $.ACTION(() => {
+      $.OPTION(() => {
+        $.SUBRULE($.packageDeclaration);
+        // TODO: this return must be outside the OPTION at the top level rule
+        // a Java Module source code may not contain a package declaration.
+        return false;
       });
 
-      $.MANY2({
-        // To avoid ambiguity with @interface ("AnnotationTypeDeclaration" vs "Annotaion")
-        GATE: () =>
-          (tokenMatcher($.LA(1).tokenType, t.At) &&
-            tokenMatcher($.LA(2).tokenType, t.Interface)) === false,
-        DEF: () => {
-          $.SUBRULE($.annotation);
+      try {
+        // the "{importDeclaration}" is a common prefix
+        $.MANY(() => {
+          $.SUBRULE2($.importDeclaration);
+        });
+
+        $.MANY2({
+          // To avoid ambiguity with @interface ("AnnotationTypeDeclaration" vs "Annotaion")
+          GATE: () =>
+            (tokenMatcher($.LA(1).tokenType, t.At) &&
+              tokenMatcher($.LA(2).tokenType, t.Interface)) === false,
+          DEF: () => {
+            $.SUBRULE($.annotation);
+          }
+        });
+      } catch (e) {
+        // This means we had a syntax error in the imports or annotations
+        // So we can't keep parsing deep enough to make the decision
+        if (isRecognitionException(e)) {
+          // TODO: add original syntax error?
+          throw "Cannot Identify if the source code is an OrdinaryCompilationUnit or  ModularCompilationUnit";
+        } else {
+          throw e;
         }
-      });
-    } catch (e) {
-      // This means we had a syntax error in the imports or annotations
-      // So we can't keep parsing deep enough to make the decision
-      if (isRecognitionException(e)) {
-        // TODO: add original syntax error?
-        throw "Cannot Identify if the source code is an OrdinaryCompilationUnit or  ModularCompilationUnit";
-      } else {
-        throw e;
       }
-    }
-    const nextTokenType = this.LA(1).tokenType;
-    return (
-      tokenMatcher(nextTokenType, t.Open) ||
-      tokenMatcher(nextTokenType, t.Module)
-    );
+      const nextTokenType = this.LA(1).tokenType;
+      return (
+        tokenMatcher(nextTokenType, t.Open) ||
+        tokenMatcher(nextTokenType, t.Module)
+      );
+    });
   });
 }
 

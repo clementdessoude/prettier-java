@@ -570,30 +570,34 @@ function defineRules($, t) {
 
   // Optimized backtracking, only scan ahead until the arrow("->").
   $.RULE("isLambdaExpression", () => {
-    // TODO: this check of next two tokens is probably redundant as the normal lookahead should take care of this.
-    const firstTokenType = this.LA(1).tokenType;
-    const secondTokenType = this.LA(2).tokenType;
-    // no parent lambda "x -> x * 2"
-    if (
-      tokenMatcher(firstTokenType, t.Identifier) &&
-      tokenMatcher(secondTokenType, t.Arrow)
-    ) {
-      return true;
-    }
-    // Performance optimizations, fail fast if it is not a LBrace.
-    else if (tokenMatcher(firstTokenType, t.LBrace)) {
-      $.SUBRULE($.lambdaParametersWithBraces);
-      const followedByArrow = tokenMatcher(this.LA(1).tokenType, t.Arrow);
-      return followedByArrow;
-    }
-    return false;
+    return $.ACTION(() => {
+      // TODO: this check of next two tokens is probably redundant as the normal lookahead should take care of this.
+      const firstTokenType = this.LA(1).tokenType;
+      const secondTokenType = this.LA(2).tokenType;
+      // no parent lambda "x -> x * 2"
+      if (
+        tokenMatcher(firstTokenType, t.Identifier) &&
+        tokenMatcher(secondTokenType, t.Arrow)
+      ) {
+        return true;
+      }
+      // Performance optimizations, fail fast if it is not a LBrace.
+      else if (tokenMatcher(firstTokenType, t.LBrace)) {
+        $.SUBRULE($.lambdaParametersWithBraces);
+        const followedByArrow = tokenMatcher(this.LA(1).tokenType, t.Arrow);
+        return followedByArrow;
+      }
+      return false;
+    });
   });
 
   $.RULE("isCastExpression", () => {
-    if (this.BACKTRACK_LOOKAHEAD($.isPrimitiveCastExpression)) {
-      return true;
-    }
-    return this.BACKTRACK_LOOKAHEAD($.isReferenceTypeCastExpression);
+    return $.ACTION(() => {
+      if (this.BACKTRACK_LOOKAHEAD($.isPrimitiveCastExpression)) {
+        return true;
+      }
+      return this.BACKTRACK_LOOKAHEAD($.isReferenceTypeCastExpression);
+    });
   });
 
   $.RULE("isPrimitiveCastExpression", () => {
@@ -635,31 +639,33 @@ function defineRules($, t) {
   });
 
   $.RULE("isRefTypeInMethodRef", () => {
-    $.SUBRULE($.typeArguments);
+    return $.ACTION(() => {
+      $.SUBRULE($.typeArguments);
 
-    // arrayType
-    const hasDims = $.OPTION(() => {
-      $.SUBRULE($.dims);
+      // arrayType
+      const hasDims = $.OPTION(() => {
+        $.SUBRULE($.dims);
+      });
+
+      const firstTokTypeAfterTypeArgs = this.LA(1).tokenType;
+      if (tokenMatcher(firstTokTypeAfterTypeArgs, t.ColonColon)) {
+        return true;
+      }
+      // we must be at the end of a "referenceType" if "dims" were encountered
+      // So there is not point to check farther
+      else if (hasDims) {
+        return false;
+      }
+
+      // in the middle of a "classReferenceType"
+      $.OPTION2(() => {
+        $.CONSUME(t.Dot);
+        $.SUBRULE($.classOrInterfaceType);
+      });
+
+      const firstTokTypeAfterRefType = this.LA(1).tokenType;
+      return tokenMatcher(firstTokTypeAfterRefType, t.ColonColon);
     });
-
-    const firstTokTypeAfterTypeArgs = this.LA(1).tokenType;
-    if (tokenMatcher(firstTokTypeAfterTypeArgs, t.ColonColon)) {
-      return true;
-    }
-    // we must be at the end of a "referenceType" if "dims" were encountered
-    // So there is not point to check farther
-    else if (hasDims) {
-      return false;
-    }
-
-    // in the middle of a "classReferenceType"
-    $.OPTION2(() => {
-      $.CONSUME(t.Dot);
-      $.SUBRULE($.classOrInterfaceType);
-    });
-
-    const firstTokTypeAfterRefType = this.LA(1).tokenType;
-    return tokenMatcher(firstTokTypeAfterRefType, t.ColonColon);
   });
 }
 

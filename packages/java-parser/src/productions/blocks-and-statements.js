@@ -469,36 +469,40 @@ function defineRules($, t) {
   // Special optimized backtracking rules.
   // ------------------------------------
   $.RULE("isBasicForStatement", () => {
-    $.CONSUME(t.For);
-    $.CONSUME(t.LBrace);
-    $.OPTION(() => {
-      $.SUBRULE($.forInit);
+    return $.ACTION(() => {
+      $.CONSUME(t.For);
+      $.CONSUME(t.LBrace);
+      $.OPTION(() => {
+        $.SUBRULE($.forInit);
+      });
+      $.CONSUME(t.Semicolon);
+      // consuming the first semiColon distinguishes between
+      // "basic" and "enhanced" for statements
+      return true;
     });
-    $.CONSUME(t.Semicolon);
-    // consuming the first semiColon distinguishes between
-    // "basic" and "enhanced" for statements
-    return true;
   });
 
   $.RULE("isLocalVariableDeclaration", () => {
-    $.MANY(() => {
-      $.SUBRULE($.variableModifier);
-    });
-    $.SUBRULE($.localVariableType);
-    $.SUBRULE($.variableDeclaratorId);
+    return $.ACTION(() => {
+      $.MANY(() => {
+        $.SUBRULE($.variableModifier);
+      });
+      $.SUBRULE($.localVariableType);
+      $.SUBRULE($.variableDeclaratorId);
 
-    const nextTokenType = this.LA(1).tokenType;
-    switch (nextTokenType) {
-      // Int x;
-      case t.Semicolon:
-      // Int x, y, z;
-      case t.Comma:
-      // Int x = 5;
-      case t.Equals:
-        return true;
-      default:
-        return false;
-    }
+      const nextTokenType = this.LA(1).tokenType;
+      switch (nextTokenType) {
+        // Int x;
+        case t.Semicolon:
+        // Int x, y, z;
+        case t.Comma:
+        // Int x = 5;
+        case t.Equals:
+          return true;
+        default:
+          return false;
+      }
+    });
   });
 }
 

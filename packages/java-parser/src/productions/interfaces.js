@@ -71,7 +71,7 @@ function defineRules($, t) {
     const detectedType = this.BACKTRACK_LOOKAHEAD(
       $.identifyInterfaceBodyDeclarationType
     );
-    $.OR([
+    $.OR1([
       {
         GATE: () => detectedType === InterfaceBodyTypes.constantDeclaration,
         ALT: () => $.SUBRULE($.constantDeclaration)
@@ -170,7 +170,7 @@ function defineRules($, t) {
     const detectedType = this.BACKTRACK_LOOKAHEAD(
       $.identifyAnnotationBodyDeclarationType
     );
-    $.OR([
+    $.OR1([
       {
         GATE: () =>
           detectedType === AnnotationBodyTypes.annotationTypeElementDeclaration,
@@ -274,7 +274,7 @@ function defineRules($, t) {
     const isSimpleElementValueAnnotation = this.BACKTRACK_LOOKAHEAD(
       $.isSimpleElementValueAnnotation
     );
-    $.OR([
+    $.OR1([
       // Spec Deviation: "conditionalExpression" replaced with "expression"
       // Because we cannot differentiate between the two using fixed lookahead.
       {
@@ -284,7 +284,7 @@ function defineRules($, t) {
       { ALT: () => $.SUBRULE($.elementValueArrayInitializer) },
       {
         GATE: () => isSimpleElementValueAnnotation === true,
-        ALT: () => $.SUBRULE($.annotation)
+        ALT: () => $.SUBRULE1($.annotation)
       }
     ]);
   });
@@ -457,20 +457,22 @@ function defineRules($, t) {
   });
 
   $.RULE("isSimpleElementValueAnnotation", () => {
-    $.SUBRULE($.annotation);
-    const nextTokenType = this.LA(1).tokenType;
-    switch (nextTokenType) {
-      // annotation in "ElementValue" would be followed by one of those
-      // any other TokenType would indicate it is an annotation in a "referenceType"
-      // as part of a "methodReference" in "primary"
-      case t.Comma:
-      case t.Semicolon:
-      case t.RCurly:
-      case t.RBrace:
-        return true;
-      default:
-        return false;
-    }
+    return $.ACTION(() => {
+      $.SUBRULE($.annotation);
+      const nextTokenType = this.LA(1).tokenType;
+      switch (nextTokenType) {
+        // annotation in "ElementValue" would be followed by one of those
+        // any other TokenType would indicate it is an annotation in a "referenceType"
+        // as part of a "methodReference" in "primary"
+        case t.Comma:
+        case t.Semicolon:
+        case t.RCurly:
+        case t.RBrace:
+          return true;
+        default:
+          return false;
+      }
+    });
   });
 }
 
