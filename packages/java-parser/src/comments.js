@@ -1,90 +1,6 @@
 "use strict";
 const _ = require("lodash");
 
-function attachComments(tokens, comments) {
-  const attachComments = [...comments];
-
-  // edge case: when the file contains only one token (;/if no token then EOF)
-  if (tokens.length === 1) {
-    attachComments.forEach(comment => {
-      if (comment.endOffset < tokens[0].startOffset) {
-        if (!tokens[0].leadingComments) {
-          tokens[0].leadingComments = [];
-        }
-        tokens[0].leadingComments.push(comment);
-      } else {
-        if (!tokens[0].trailingComments) {
-          tokens[0].trailingComments = [];
-        }
-        tokens[0].trailingComments.push(comment);
-      }
-    });
-    return tokens;
-  }
-
-  // edge case: when the file start with comments, it attaches as leadingComments to the first token
-  const firstToken = tokens[0];
-  const headComments = [];
-  while (
-    attachComments.length > 0 &&
-    attachComments[0].endOffset < firstToken.startOffset
-  ) {
-    headComments.push(attachComments[0]);
-    attachComments.splice(0, 1);
-  }
-
-  if (headComments.length > 0) {
-    firstToken.leadingComments = headComments;
-  }
-
-  // edge case: when the file end with comments, it attaches as trailingComments to the last token
-  const lastToken = tokens[tokens.length - 1];
-  const tailComments = [];
-  while (
-    attachComments.length > 0 &&
-    attachComments[attachComments.length - 1].startOffset > lastToken.endOffset
-  ) {
-    tailComments.push(attachComments[attachComments.length - 1]);
-    attachComments.splice(attachComments.length - 1, 1);
-  }
-
-  if (tailComments.length > 0) {
-    lastToken.trailingComments = tailComments.reverse();
-  }
-
-  let currentToken = 0;
-  attachComments.forEach(element => {
-    // find the correct position to place the comment
-    while (
-      !(
-        element.startOffset > tokens[currentToken].endOffset &&
-        element.endOffset < tokens[currentToken + 1].startOffset
-      )
-    ) {
-      currentToken++;
-    }
-
-    // attach comment to the next token by default,
-    // it attaches to the current one when the comment and token is on the same line
-    if (
-      element.startLine === tokens[currentToken].endLine &&
-      element.startLine !== tokens[currentToken + 1].startLine
-    ) {
-      if (!tokens[currentToken].trailingComments) {
-        tokens[currentToken].trailingComments = [];
-      }
-      tokens[currentToken].trailingComments.push(element);
-    } else {
-      if (!tokens[currentToken + 1].leadingComments) {
-        tokens[currentToken + 1].leadingComments = [];
-      }
-      tokens[currentToken + 1].leadingComments.push(element);
-    }
-  });
-
-  return tokens;
-}
-
 /**
  * Search where is the position of the comment in the token array by
  * using dichotomic search.
@@ -165,6 +81,69 @@ function attachIgnoreNodes(ignoreComments, ignoredNodes) {
 
 function ignoredComments(tokens, comments) {
   return extendCommentRange(tokens, filterPrettierIgnore(comments));
+}
+
+function pretraitement(tokens, comments) {
+  const commentsEndOffset = {};
+  const commentsStartOffset = {};
+
+  let position;
+  comments.forEach(comment => {
+    position = findUpperBoundToken(tokens, comment);
+    const startOffset =
+      position - 1 < 0 ? comment.startOffset : tokens[position - 1].endOffset;
+    const endOffset =
+      position == tokens.length
+        ? comment.endOffset
+        : tokens[position].startOffset;
+
+    if (commentsEndOffset[endOffset] === undefined) {
+      commentsEndOffset[endOffset] = [comment];
+    } else {
+      commentsEndOffset[endOffset].push(comment);
+    }
+
+    if (commentsStartOffset[startOffset] === undefined) {
+      commentsStartOffset[startOffset] = [comment];
+    } else {
+      commentsStartOffset[startOffset].push(comment);
+    }
+  });
+
+  return { commentsEndOffset, commentsStartOffset };
+}
+
+function attachComments(tokens, comments, parser) {
+  const { commentsStartOffset, commentsEndOffset } = pretraitement(
+    tokens,
+    comments
+  );
+  const commentsToAttach = new Set(comments);
+
+  Object.keys(parser.leadingComments).forEach(startOffset => {
+    if (commentsEndOffset[startOffset] !== undefined) {
+      parser.leadingComments[startOffset].leadingComments =
+        commentsEndOffset[startOffset];
+
+      commentsEndOffset[startOffset].forEach(comment => {
+        commentsToAttach.delete(comment);
+      });
+    }
+  });
+
+  Object.keys(parser.trailingComments).forEach(endOffset => {
+    if (commentsStartOffset[endOffset] !== undefined) {
+      const nodeTrailingComments = commentsStartOffset[endOffset].filter(
+        comment => commentsToAttach.has(comment)
+      );
+
+      if (nodeTrailingComments.length > 0) {
+        parser.trailingComments[
+          endOffset
+        ].trailingComments = nodeTrailingComments;
+      }
+    }
+  });
 }
 
 module.exports = {
