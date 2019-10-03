@@ -44,8 +44,6 @@ class JavaParser extends Parser {
     });
 
     const $ = this;
-    this.ignoreNodes = {};
-    this.ignoreComments = [];
 
     this.leadingComments = {};
     this.trailingComments = {};
@@ -85,7 +83,6 @@ class JavaParser extends Parser {
 
       this.leadingComments[ruleCstResult.location.startOffset] = ruleCstResult;
       this.trailingComments[ruleCstResult.location.endOffset] = ruleCstResult;
-      // shouldIgnore(ruleCstResult, this.ignoredComments, this.ignoredNodes);
     }
   }
 
@@ -109,11 +106,6 @@ class JavaParser extends Parser {
         this.isBackTrackingStack.pop();
       }
     });
-  }
-
-  setIgnoredComments(comments) {
-    this.ignoredNodes = {};
-    this.ignoredComments = [...comments];
   }
 }
 

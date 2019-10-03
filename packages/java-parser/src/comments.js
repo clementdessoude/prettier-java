@@ -1,5 +1,4 @@
 "use strict";
-const _ = require("lodash");
 
 /**
  * Search where is the position of the comment in the token array by
@@ -27,60 +26,6 @@ function findUpperBoundToken(tokens, comment) {
     }
   }
   return i;
-}
-
-/**
- * Extends each comments offsets to the left and the right in order to match the
- * previous and next token offset. This allow to directly match the prettier-ignore
- * comment to the correct CSTNode.
- * @param {*} tokens ordered array of tokens
- * @param {*} comments array of prettier-ignore comments
- * @return prettier-ignore comment array with extended location
- */
-function extendCommentRange(tokens, comments) {
-  const ignoreComments = [...comments];
-  let position;
-  ignoreComments.forEach(comment => {
-    position = findUpperBoundToken(tokens, comment);
-    comment.extendedRange = {};
-    comment.extendedRange.startOffset =
-      position - 1 < 0 ? comment.startOffset : tokens[position - 1].endOffset;
-    comment.extendedRange.endOffset =
-      position == tokens.length
-        ? comment.endOffset
-        : tokens[position].startOffset;
-  });
-  return ignoreComments;
-}
-
-function filterPrettierIgnore(comments) {
-  return [...comments].filter(comment =>
-    comment.image.match(
-      /(\/\/(\s*)prettier-ignore(\s*))|(\/\*(\s*)prettier-ignore(\s*)\*\/)/gm
-    )
-  );
-}
-
-function shouldIgnore(node, comments, ignoredNodes) {
-  const matchingComment = _.find(
-    comments,
-    comment => comment.extendedRange.endOffset === node.location.startOffset
-  );
-  if (matchingComment) {
-    ignoredNodes[matchingComment.startOffset] = node;
-  }
-}
-
-function attachIgnoreNodes(ignoreComments, ignoredNodes) {
-  ignoreComments.forEach(comment => {
-    if (ignoredNodes[comment.startOffset]) {
-      ignoredNodes[comment.startOffset].ignore = true;
-    }
-  });
-}
-
-function ignoredComments(tokens, comments) {
-  return extendCommentRange(tokens, filterPrettierIgnore(comments));
 }
 
 function pretraitement(tokens, comments) {
@@ -125,6 +70,22 @@ function attachComments(tokens, comments, parser) {
       parser.leadingComments[startOffset].leadingComments =
         commentsEndOffset[startOffset];
 
+      // prettier ignore support
+      let ignoreNode = false;
+      for (let i = 0; i < commentsEndOffset[startOffset].length; i++) {
+        if (
+          commentsEndOffset[startOffset][i].image.match(
+            /(\/\/(\s*)prettier-ignore(\s*))|(\/\*(\s*)prettier-ignore(\s*)\*\/)/gm
+          )
+        ) {
+          ignoreNode = true;
+        }
+      }
+
+      if (ignoreNode) {
+        parser.leadingComments[startOffset].ignore = true;
+      }
+
       commentsEndOffset[startOffset].forEach(comment => {
         commentsToAttach.delete(comment);
       });
@@ -147,8 +108,5 @@ function attachComments(tokens, comments, parser) {
 }
 
 module.exports = {
-  attachComments,
-  shouldIgnore,
-  ignoredComments,
-  attachIgnoreNodes
+  attachComments
 };
