@@ -289,8 +289,9 @@ class ClassesPrettierVisitor {
     const headerBodySeparator =
       body !== undefined &&
       body.type === "concat" &&
-      body.parts &&
-      body.parts.includes(";")
+      body.parts.length === 1 &&
+      body.parts[0].type === "concat" &&
+      body.parts[0].parts[0] === ";"
         ? ""
         : " ";
 
