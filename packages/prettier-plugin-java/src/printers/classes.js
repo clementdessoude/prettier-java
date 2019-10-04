@@ -12,7 +12,8 @@ const {
   displaySemicolon,
   putIntoBraces,
   putIntoCurlyBraces,
-  getClassBodyDeclarationsSeparator
+  getClassBodyDeclarationsSeparator,
+  isStatementEmptyStatement
 } = require("./printer-utils");
 const {
   concat,
@@ -286,14 +287,8 @@ class ClassesPrettierVisitor {
 
     const header = this.visit(ctx.methodHeader);
     const body = this.visit(ctx.methodBody);
-    const headerBodySeparator =
-      body !== undefined &&
-      body.type === "concat" &&
-      body.parts.length === 1 &&
-      body.parts[0].type === "concat" &&
-      body.parts[0].parts[0] === ";"
-        ? ""
-        : " ";
+
+    const headerBodySeparator = isStatementEmptyStatement(body) ? "" : " ";
 
     return rejectAndJoin(hardline, [
       rejectAndJoin(hardline, firstAnnotations),
@@ -538,7 +533,6 @@ class ClassesPrettierVisitor {
     const argumentList = this.visit(ctx.argumentList);
     return rejectAndConcat([
       typeArguments,
-      " ",
       keyWord,
       group(
         rejectAndConcat([
