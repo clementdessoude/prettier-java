@@ -6,7 +6,7 @@ const { expect } = require("chai");
 const { readFileSync, existsSync, removeSync, copySync } = require("fs-extra");
 const { resolve, relative, basename } = require("path");
 const klawSync = require("klaw-sync");
-const { spawnSync } = require("child_process");
+const { execSync, spawnSync } = require("child_process");
 
 const { createPrettierDoc } = require("../src/cst-printer");
 const javaParser = require("java-parser");
@@ -119,9 +119,23 @@ function expectSnippetToBeFormatted({ input, expectedOutput, entryPoint }) {
   expect(secondPass).to.equal(expectedOutput);
 }
 
+function cloneRepoIfNotExists({ repoName, repoUrl, branch }) {
+  const samplesDir = resolve(__dirname, "../samples");
+
+  if (!existsSync(resolve(samplesDir, repoName))) {
+    // eslint-disable-next-line no-console
+    console.log(`cloning ${repoUrl}`);
+    execSync(`git clone ${repoUrl} --branch ${branch} --depth 1`, {
+      cwd: samplesDir,
+      stdio: [0, 1, 2]
+    });
+  }
+}
+
 module.exports = {
   expectSnippetToBeFormatted,
   formatJavaSnippet,
   testSample,
-  testRepositorySample
+  testRepositorySample,
+  cloneRepoIfNotExists
 };

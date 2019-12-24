@@ -18,7 +18,7 @@
 #
 
 name: E2E tests
-on: [push, pull_request]
+on: [pull_request]
 jobs:
   prettier-java:
     name: E2E tests - 1
@@ -30,7 +30,11 @@ jobs:
       matrix:
         node_version: [10.17.0, 12.13.1, 13.0.1]
         os: [ubuntu-latest]
-        TEST_REPOSITORY: ["e2e-jhipster1", "e2e-jhipster2"]
+        TEST_REPOSITORY:
+          - elasticsearch
+          - guava
+          - java-design-patterns
+          - spring-boot
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1

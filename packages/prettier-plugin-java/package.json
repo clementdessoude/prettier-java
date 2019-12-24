@@ -12,6 +12,10 @@
   },
   "scripts": {
     "test": "npm-run-all test:unit test:e2e-core",
+    "test:elasticsearch": "mocha \"test/repository-test/elasticsearch.js\"",
+    "test:guava": "mocha \"test/repository-test/guava.js\"",
+    "test:java-design-patterns": "mocha \"test/repository-test/java-design-patterns.js\"",
+    "test:spring-boot": "mocha \"test/repository-test/spring-boot.js\"",
     "test:unit": "mocha \"test/unit-test/**/*.spec.js\" \"test/unit-test/**/*-spec.js\"",
     "test:unit:coverage": "nyc mocha \"test/unit-test/**/*.spec.js\" \"test/unit-test/**/*-spec.js\"",
     "test:e2e-core": "node scripts/clone-samples e2e-core && mocha \"test/repository-test/core-test.js\"",
